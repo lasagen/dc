@@ -52,7 +52,7 @@ if __name__ == '__main__':
     )
 
     table = zip(*stripped_strings)
-    now = datetime.now().replace(tzinfo=dc_tz)
+    now = datetime.now().astimezone()
     
     classes = [DanceClass(title,
                           datetime.strptime(date_start, start_dt_format)
