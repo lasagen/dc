@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 from bs4 import BeautifulSoup
-from collections import namedtuple
+from dataclasses import dataclass
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import re
 import requests
 import sys
@@ -13,10 +14,14 @@ root = "https://www.dancecomplex.org/classes-workshops/"
 age_limit_regex = re.compile(r"\(Age.*\)")
 start_dt_format = '%B %d @ %I:%M %p'
 end_dt_format = '%I:%M %p'
-# dc_tz = pytz.timezone('US/Eastern')
+dc_tz = ZoneInfo('US/Eastern')
 
-DanceClass = namedtuple('DanceClass',
-                        ['title', 'start_dt', 'end_t', 'studio'])
+@dataclass
+class DanceClass:
+    title: str
+    start_dt: datetime
+    end_dt: datetime
+    studio: str
 
 
 def request_wrapped(path):
@@ -47,29 +52,30 @@ if __name__ == '__main__':
     )
 
     table = zip(*stripped_strings)
+    now = datetime.now().replace(tzinfo=dc_tz)
     
     classes = [DanceClass(title,
-                          datetime.strptime(date_start, start_dt_format),
-                          datetime.strptime(time_end, end_dt_format),
+                          datetime.strptime(date_start, start_dt_format)
+                          .replace(year=now.year, tzinfo=dc_tz),
+                          datetime.strptime(time_end, end_dt_format)
+                          .replace(year=now.year, tzinfo=dc_tz),
                           studio)
                for title, date_start, time_end, studio in table]
+    for c in classes:
+        c.end_dt = c.end_dt.replace(month=c.start_dt.month, day=c.start_dt.day)
     
     adult_classes = filter(
         lambda c: not age_limit_regex.search(c.title), classes)
     
     for c in adult_classes:
         print(c.title)
-        duration = (c.end_t - c.start_dt).seconds / 3600
+        duration = (c.end_dt - c.start_dt).seconds / 3600
         print(f"{c.start_dt.strftime('%B %d | %I:%M %p')} - \
-{c.end_t.strftime('%I:%M %p')} ({duration} hours)")
+{c.end_dt.strftime('%I:%M %p')} ({duration} hours)")
         state = ""
-        now = datetime.now()
-        start_dt = c.start_dt.replace(year=now.year)
-        end_dt = c.end_t.replace(
-            year=now.year, month=c.start_dt.month, day=c.start_dt.day)
-        if now > end_dt:
+        if now > c.end_dt:
             state = "Ended"
-        elif now < start_dt:
+        elif now < c.start_dt:
             state = "Upcoming"
         else:
             state = "In Progress"
