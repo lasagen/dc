@@ -64,11 +64,12 @@ if __name__ == '__main__':
 {c.end_t.strftime('%I:%M %p')} ({duration} hours)")
         state = ""
         now = datetime.now()
+        start_dt = c.start_dt.replace(year=now.year)
         end_dt = c.end_t.replace(
             year=now.year, month=c.start_dt.month, day=c.start_dt.day)
         if now > end_dt:
             state = "Ended"
-        elif now < c.start_dt:
+        elif now < start_dt:
             state = "Upcoming"
         else:
             state = "In Progress"
