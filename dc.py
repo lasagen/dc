@@ -21,20 +21,20 @@ DanceClass = namedtuple('DanceClass',
 
 def request_wrapped(path):
     try:
-        r = requests.get(path)
-        if r.ok:
+        response = requests.get(path)
+        if response.ok:
             print(f"Got a response from {path}\n")
         else:
-            raise(ValueError(f"Status code {r.status_code}"))
-    except Exception as e:
-        print(f"Request to {path} failed :( \nDetails: {e}")
+            raise(ValueError(f"Status code {response.status_code}"))
+    except Exception as err:
+        print(f"Request to {path} failed :( \nDetails: {err}")
         sys.exit(1)
-    return r
+    return response
 
 
 if __name__ == '__main__':
-    r = request_wrapped(root)
-    soup = BeautifulSoup(r.text, "html.parser")
+    response = request_wrapped(root)
+    soup = BeautifulSoup(response.text, "html.parser")
 
     raw_titles = soup.find_all("a", {"class": "tribe-events-calendar-day__event-title-link tribe-common-anchor-thin"})
     raw_date_start = soup.find_all("span", {"class": "tribe-event-date-start"})
@@ -42,17 +42,17 @@ if __name__ == '__main__':
     raw_studios = soup.find_all("span", {"class": "tribe-events-calendar-day__event-venue-title tribe-common-b2--bold"})
 
     stripped_strings = map(
-        lambda l: [x.string.strip() for x in l],
+        lambda lst: [x.string.strip() for x in lst],
         [raw_titles, raw_date_start, raw_time_end, raw_studios]        
     )
 
     table = zip(*stripped_strings)
     
-    classes = [DanceClass(t,
-                          datetime.strptime(ds, start_dt_format),
-                          datetime.strptime(de, end_dt_format),
-                          s)
-               for t, ds, de, s in table]
+    classes = [DanceClass(title,
+                          datetime.strptime(date_start, start_dt_format),
+                          datetime.strptime(time_end, end_dt_format),
+                          studio)
+               for title, date_start, time_end, studio in table]
     
     adult_classes = filter(
         lambda c: not age_limit_regex.search(c.title), classes)
