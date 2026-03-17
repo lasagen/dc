@@ -22,6 +22,7 @@ class DanceClass:
     start_dt: datetime
     end_dt: datetime
     studio: str
+    link: str
 
 
 def request_wrapped(path):
@@ -41,15 +42,16 @@ if __name__ == '__main__':
     response = request_wrapped(root)
     soup = BeautifulSoup(response.text, "html.parser")
 
-    raw_titles = soup.find_all("a", {"class": "tribe-events-calendar-day__event-title-link tribe-common-anchor-thin"})
+    raw_titles = soup.find_all("a", {"class": "tribe-events-calendar-day__event-title-link tribe-common-anchor-thin"}, href=True)
     raw_date_start = soup.find_all("span", {"class": "tribe-event-date-start"})
     raw_time_end = soup.find_all("span", {"class": "tribe-event-time"})
     raw_studios = soup.find_all("span", {"class": "tribe-events-calendar-day__event-venue-title tribe-common-b2--bold"})
 
-    stripped_strings = map(
+    stripped_strings = list(map(
         lambda lst: [x.string.strip() for x in lst],
         [raw_titles, raw_date_start, raw_time_end, raw_studios]        
-    )
+    ))
+    stripped_strings.append([title['href'] for title in raw_titles])
 
     table = zip(*stripped_strings)
     now = datetime.now().astimezone()
@@ -59,8 +61,9 @@ if __name__ == '__main__':
                           .replace(year=now.year, tzinfo=dc_tz),
                           datetime.strptime(time_end, end_dt_format)
                           .replace(year=now.year, tzinfo=dc_tz),
-                          studio)
-               for title, date_start, time_end, studio in table]
+                          studio,
+                          link)
+               for title, date_start, time_end, studio, link in table]
     for c in classes:
         c.end_dt = c.end_dt.replace(month=c.start_dt.month, day=c.start_dt.day)
     
