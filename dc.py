@@ -9,9 +9,9 @@ import requests
 import sys
 
 
-root = "https://www.dancecomplex.org/classes-workshops/"
+root = 'https://www.dancecomplex.org/classes-workshops/'
 
-age_limit_regex = re.compile(r"\(Age.*\)")
+age_limit_regex = re.compile(r'\(Age.*\)')
 start_dt_format = '%B %d @ %I:%M %p'
 end_dt_format = '%I:%M %p'
 dc_tz = ZoneInfo('US/Eastern')
@@ -29,23 +29,23 @@ def request_wrapped(path):
     try:
         response = requests.get(path)
         if response.ok:
-            print(f"Got a response from {path}\n")
+            print(f'Got a response from {path}\n')
         else:
-            raise(ValueError(f"Status code {response.status_code}"))
+            raise(ValueError(f'Status code {response.status_code}'))
     except Exception as err:
-        print(f"Request to {path} failed :( \nDetails: {err}")
+        print(f'Request to {path} failed :( \nDetails: {err}')
         sys.exit(1)
     return response
 
 
 if __name__ == '__main__':
     response = request_wrapped(root)
-    soup = BeautifulSoup(response.text, "html.parser")
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-    raw_titles = soup.find_all("a", {"class": "tribe-events-calendar-day__event-title-link tribe-common-anchor-thin"}, href=True)
-    raw_date_start = soup.find_all("span", {"class": "tribe-event-date-start"})
-    raw_time_end = soup.find_all("span", {"class": "tribe-event-time"})
-    raw_studios = soup.find_all("span", {"class": "tribe-events-calendar-day__event-venue-title tribe-common-b2--bold"})
+    raw_titles = soup.find_all('a', {'class': 'tribe-events-calendar-day__event-title-link tribe-common-anchor-thin'}, href=True)
+    raw_date_start = soup.find_all('span', {'class': 'tribe-event-date-start'})
+    raw_time_end = soup.find_all('span', {'class': 'tribe-event-time'})
+    raw_studios = soup.find_all('span', {'class': 'tribe-events-calendar-day__event-venue-title tribe-common-b2--bold'})
 
     stripped_strings = list(map(
         lambda lst: [x.string.strip() for x in lst],
@@ -71,22 +71,22 @@ if __name__ == '__main__':
     maybe_adult_classes = [c for c in classes
                            if not age_limit_regex.search(c.title)]
     
-    # check filtered pages for "Classes for Adults" category
+    # check filtered pages for 'Classes for Adults' category
     # not worrying about page location for now
     adult_classes = [c for c in maybe_adult_classes
-                      if "Classes for Adults" in request_wrapped(c.link).text]
+                      if 'Classes for Adults' in request_wrapped(c.link).text]
     
     for c in adult_classes:
         print(c.title)
         duration = (c.end_dt - c.start_dt).seconds / 3600
         print(f"{c.start_dt.strftime('%B %d | %I:%M %p')} - \
 {c.end_dt.strftime('%I:%M %p')} ({duration} hours)")
-        state = ""
+        state = ''
         if now > c.end_dt:
-            state = "Ended"
+            state = 'Ended'
         elif now < c.start_dt:
-            state = "Upcoming"
+            state = 'Upcoming'
         else:
-            state = "In Progress"
-        print(f"{state} | {c.studio}")
+            state = 'In Progress'
+        print(f'{state} | {c.studio}')
         print()
