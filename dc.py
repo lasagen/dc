@@ -67,8 +67,14 @@ if __name__ == '__main__':
     for c in classes:
         c.end_dt = c.end_dt.replace(month=c.start_dt.month, day=c.start_dt.day)
     
-    adult_classes = filter(
+    # filter by title to reduce number of requests
+    maybe_adult_classes = filter(
         lambda c: not age_limit_regex.search(c.title), classes)
+    
+    # check filtered pages for "Classes for Adults" category
+    # not worrying about page location for now
+    adult_classes = [c for c in maybe_adult_classes
+                      if "Classes for Adults" in request_wrapped(c.link).text]
     
     for c in adult_classes:
         print(c.title)
