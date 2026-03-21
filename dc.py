@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 from bs4 import BeautifulSoup
-from dataclasses import dataclass
 from datetime import datetime
 from zoneinfo import ZoneInfo
+import msgspec
 import re
 import requests
 import sys
@@ -16,8 +16,7 @@ start_dt_format = '%B %d @ %I:%M %p'
 end_dt_format = '%I:%M %p'
 dc_tz = ZoneInfo('US/Eastern')
 
-@dataclass
-class DanceClass:
+class DanceClass(msgspec.Struct):
     title: str
     start_dt: datetime
     end_dt: datetime
@@ -66,6 +65,10 @@ if __name__ == '__main__':
                for title, date_start, time_end, studio, link in table]
     for c in classes:
         c.end_dt = c.end_dt.replace(month=c.start_dt.month, day=c.start_dt.day)
+    
+    # json_classes = "\n".join([json.dumps(c) for c in classes])
+    # with open('cache.jsonl') as f:
+    #     f.write(json_classes)
     
     # filter by title to reduce number of requests
     maybe_adult_classes = [c for c in classes
