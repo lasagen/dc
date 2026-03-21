@@ -66,10 +66,6 @@ if __name__ == '__main__':
     for c in classes:
         c.end_dt = c.end_dt.replace(month=c.start_dt.month, day=c.start_dt.day)
     
-    # json_classes = "\n".join([json.dumps(c) for c in classes])
-    # with open('cache.jsonl') as f:
-    #     f.write(json_classes)
-    
     # filter by title to reduce number of requests
     maybe_adult_classes = [c for c in classes
                            if not age_limit_regex.search(c.title)]
@@ -78,6 +74,11 @@ if __name__ == '__main__':
     # not worrying about page location for now
     adult_classes = [c for c in maybe_adult_classes
                       if 'Classes for Adults' in request_wrapped(c.link).text]
+    
+    with open('cache.jsonl', 'wb') as f:
+        for c in adult_classes:
+            f.write(msgspec.json.encode(c))
+            f.write(b'\n')
     
     for c in adult_classes:
         print(c.title)
