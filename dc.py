@@ -4,9 +4,9 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import msgspec
+import os
 import re
 import requests
-import sys
 
 
 root = 'https://www.dancecomplex.org/classes-workshops/'
@@ -15,6 +15,9 @@ age_limit_regex = re.compile(r'\(Age.*\)')
 start_dt_format = '%B %d @ %I:%M %p'
 end_dt_format = '%I:%M %p'
 dc_tz = ZoneInfo('US/Eastern')
+
+CACHE_FILENAME = './cache.jsonl'
+TTL = 3600
 
 class DanceClass(msgspec.Struct):
     title: str
@@ -33,11 +36,12 @@ def request_wrapped(path):
             raise(ValueError(f'Status code {response.status_code}'))
     except Exception as err:
         print(f'Request to {path} failed :( \nDetails: {err}')
-        sys.exit(1)
+        exit(1)
     return response
 
 
 def display(adult_classes):
+    now = datetime.now().astimezone()
     for c in adult_classes:
         print(c.title)
         duration = (c.end_dt - c.start_dt).seconds / 3600
@@ -55,6 +59,21 @@ def display(adult_classes):
 
 
 if __name__ == '__main__':
+    stat = os.stat(CACHE_FILENAME)
+    mtime_epoch = stat.st_mtime
+    mtime = datetime.fromtimestamp(mtime_epoch)
+    now = datetime.now()
+    elapsed = (now - mtime).total_seconds()
+    
+    if elapsed > TTL:
+        print(f"Loading from {CACHE_FILENAME}\n")
+        with open(CACHE_FILENAME, 'rb') as f:
+            classes_bytes = f.read().splitlines()
+        adult_classes = [msgspec.json.decode(obj, type=DanceClass)
+                        for obj in classes_bytes]
+        display(adult_classes)
+        exit(0)
+
     response = request_wrapped(root)
     soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -92,7 +111,7 @@ if __name__ == '__main__':
     adult_classes = [c for c in maybe_adult_classes
                       if 'Classes for Adults' in request_wrapped(c.link).text]
     
-    with open('cache.jsonl', 'wb') as f:
+    with open(CACHE_FILENAME, 'wb') as f:
         for c in adult_classes:
             f.write(msgspec.json.encode(c))
             f.write(b'\n')
