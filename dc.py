@@ -37,6 +37,23 @@ def request_wrapped(path):
     return response
 
 
+def display(adult_classes):
+    for c in adult_classes:
+        print(c.title)
+        duration = (c.end_dt - c.start_dt).seconds / 3600
+        print(f"{c.start_dt.strftime('%B %d | %I:%M %p')} - \
+{c.end_dt.strftime('%I:%M %p')} ({duration} hours)")
+        state = ''
+        if now > c.end_dt:
+            state = 'Ended'
+        elif now < c.start_dt:
+            state = 'Upcoming'
+        else:
+            state = 'In Progress'
+        print(f'{state} | {c.studio}')
+        print()
+
+
 if __name__ == '__main__':
     response = request_wrapped(root)
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -80,17 +97,4 @@ if __name__ == '__main__':
             f.write(msgspec.json.encode(c))
             f.write(b'\n')
     
-    for c in adult_classes:
-        print(c.title)
-        duration = (c.end_dt - c.start_dt).seconds / 3600
-        print(f"{c.start_dt.strftime('%B %d | %I:%M %p')} - \
-{c.end_dt.strftime('%I:%M %p')} ({duration} hours)")
-        state = ''
-        if now > c.end_dt:
-            state = 'Ended'
-        elif now < c.start_dt:
-            state = 'Upcoming'
-        else:
-            state = 'In Progress'
-        print(f'{state} | {c.studio}')
-        print()
+    display(adult_classes)
