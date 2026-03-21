@@ -66,7 +66,7 @@ if __name__ == '__main__':
     now = datetime.now()
     elapsed = (now - mtime).total_seconds()
     
-    if elapsed > TTL:
+    if elapsed < TTL:
         print(f'Loading dance class info from {CACHE_FILENAME}\n')
         with open(CACHE_FILENAME, 'rb') as f:
             classes_bytes = f.read().splitlines()
