@@ -35,7 +35,8 @@ def request_wrapped(path):
         if response.ok:
             print(f'Got a response from {path}\n')
         else:
-            raise(ValueError(f'Status code {response.status_code}'))
+            print(f'Request to {path} failed with status code {response.status_code}. Ignoring individual page contents.\n')
+            return None
     except Exception as err:
         print(f'Request to {path} failed :( \nDetails: {err}')
         exit(1)
@@ -80,6 +81,10 @@ if __name__ == '__main__':
                         for obj in classes_bytes]
     else:
         response = request_wrapped(root)
+        if not response:
+            print(f'{root} couldn\'t be accessed, quitting')
+            exit(1)
+        
         soup = BeautifulSoup(response.text, 'html.parser')
 
         raw_titles = soup.find_all('a', {'class': 'tribe-events-calendar-day__event-title-link tribe-common-anchor-thin'}, href=True)
@@ -113,8 +118,14 @@ if __name__ == '__main__':
         
         # check filtered pages for 'Classes for Adults' category
         # not worrying about page location for now
-        adult_classes = [c for c in maybe_adult_classes
-                        if 'Classes for Adults' in request_wrapped(c.link).text]
+        adult_classes = []
+        for c in maybe_adult_classes:
+            response = request_wrapped(c.link)
+            # if accessing individual page succeeded, only include if adult category is found
+            # if failed, assume adult class
+            if ((response and 'Classes for Adults' in response.text)
+                or not response):
+                adult_classes.append(c)
         
         print(f'Storing dance class info in {CACHE_FILENAME}')
         with open(CACHE_FILENAME, 'wb') as f:
