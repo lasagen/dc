@@ -3,6 +3,7 @@
 from bs4 import BeautifulSoup
 from datetime import datetime
 from zoneinfo import ZoneInfo
+import argparse
 import msgspec
 import os
 import re
@@ -60,13 +61,18 @@ def display(adult_classes):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', '--ignore-cache',
+                        action='store_true')
+    args = parser.parse_args()
+
     stat = os.stat(CACHE_FILENAME)
     mtime_epoch = stat.st_mtime
     mtime = datetime.fromtimestamp(mtime_epoch)
     now = datetime.now()
     elapsed = (now - mtime).total_seconds()
     
-    if elapsed < TTL:
+    if elapsed < TTL and not args.ignore_cache:
         print(f'Loading dance class info from {CACHE_FILENAME}\n')
         with open(CACHE_FILENAME, 'rb') as f:
             classes_bytes = f.read().splitlines()
